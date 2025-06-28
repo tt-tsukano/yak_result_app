@@ -74,10 +74,10 @@ function SettingsPage({ user }) {
       });
       
       setGivenEvaluations(prev => 
-        prev.map(eval => 
-          eval.id === evaluationId 
-            ? { ...eval, ...editForm }
-            : eval
+        prev.map(evaluation => 
+          evaluation.id === evaluationId 
+            ? { ...evaluation, ...editForm }
+            : evaluation
         )
       );
       
