@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS evaluations (
     evaluation_content TEXT NOT NULL,
     is_anonymous BOOLEAN DEFAULT TRUE,
     is_hidden BOOLEAN DEFAULT FALSE,
+    is_name_valid BOOLEAN DEFAULT NULL, -- NULL: 未チェック, TRUE: 有効, FALSE: 無効
+    needs_name_correction BOOLEAN DEFAULT FALSE, -- 名前修正が必要かどうか
+    original_evaluatee_name VARCHAR(255), -- 修正前の元の名前（修正した場合に保存）
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (respondent_email) REFERENCES users(email)
@@ -50,6 +53,8 @@ CREATE INDEX IF NOT EXISTS idx_evaluations_evaluatee ON evaluations(evaluatee_na
 CREATE INDEX IF NOT EXISTS idx_evaluations_respondent ON evaluations(respondent_email);
 CREATE INDEX IF NOT EXISTS idx_evaluations_category ON evaluations(evaluation_category);
 CREATE INDEX IF NOT EXISTS idx_evaluations_week ON evaluations(evaluation_week);
+CREATE INDEX IF NOT EXISTS idx_evaluations_name_valid ON evaluations(is_name_valid);
+CREATE INDEX IF NOT EXISTS idx_evaluations_needs_correction ON evaluations(needs_name_correction);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_name_mappings_variant ON name_mappings(variant_name);
 

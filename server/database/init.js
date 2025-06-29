@@ -25,7 +25,26 @@ function initDatabase() {
                 return;
             }
             console.log('データベーススキーマを初期化しました');
-            resolve(db);
+            
+            // 既存のevaluationsテーブルに新しいカラムを追加（存在しない場合のみ）
+            const migrations = [
+                `ALTER TABLE evaluations ADD COLUMN is_name_valid BOOLEAN DEFAULT NULL`,
+                `ALTER TABLE evaluations ADD COLUMN needs_name_correction BOOLEAN DEFAULT FALSE`,
+                `ALTER TABLE evaluations ADD COLUMN original_evaluatee_name VARCHAR(255)`
+            ];
+            
+            let migrationCount = 0;
+            migrations.forEach((migration, index) => {
+                db.run(migration, (err) => {
+                    migrationCount++;
+                    if (!err) {
+                        console.log(`マイグレーション ${index + 1} 完了`);
+                    }
+                    if (migrationCount === migrations.length) {
+                        resolve(db);
+                    }
+                });
+            });
         });
     });
 }

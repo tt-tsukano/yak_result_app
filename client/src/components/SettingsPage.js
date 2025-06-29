@@ -4,8 +4,11 @@ import '../styles/Settings.css';
 
 function SettingsPage({ user }) {
   const [givenEvaluations, setGivenEvaluations] = useState([]);
+  const [nameCorrections, setNameCorrections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
+  const [correctingNameId, setCorrectingNameId] = useState(null);
+  const [correctedName, setCorrectedName] = useState('');
   const [editForm, setEditForm] = useState({
     is_anonymous: true,
     evaluation_content: '',
@@ -14,6 +17,7 @@ function SettingsPage({ user }) {
 
   useEffect(() => {
     fetchGivenEvaluations();
+    fetchNameCorrections();
   }, []);
 
   const fetchGivenEvaluations = async () => {
@@ -27,6 +31,18 @@ function SettingsPage({ user }) {
     } catch (error) {
       console.error('評価データの取得エラー:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchNameCorrections = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/evaluations/name-corrections', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNameCorrections(response.data.evaluations);
+    } catch (error) {
+      console.error('名前修正データの取得エラー:', error);
     }
   };
 
@@ -122,6 +138,43 @@ function SettingsPage({ user }) {
     }
   };
 
+  const startNameCorrection = (evaluation) => {
+    setCorrectingNameId(evaluation.id);
+    setCorrectedName(evaluation.evaluatee_name);
+  };
+
+  const cancelNameCorrection = () => {
+    setCorrectingNameId(null);
+    setCorrectedName('');
+  };
+
+  const saveNameCorrection = async (evaluationId) => {
+    if (!correctedName.trim()) {
+      alert('修正後の名前を入力してください');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`/api/evaluations/${evaluationId}/correct-name`, {
+        corrected_name: correctedName.trim()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // データを再取得
+      await fetchGivenEvaluations();
+      await fetchNameCorrections();
+      
+      setCorrectingNameId(null);
+      setCorrectedName('');
+      alert('名前を修正しました');
+    } catch (error) {
+      console.error('名前修正エラー:', error);
+      alert(error.response?.data?.error || '名前の修正に失敗しました');
+    }
+  };
+
   if (loading) {
     return <div className="loading">読み込み中...</div>;
   }
@@ -140,9 +193,88 @@ function SettingsPage({ user }) {
             <li><strong>匿名/実名:</strong> 評価対象者にあなたの名前を表示するかを選択できます</li>
             <li><strong>評価内容:</strong> 過去に記入した評価内容を編集できます</li>
             <li><strong>非公開:</strong> 特定の評価を評価対象者から見えないようにできます</li>
+            <li><strong>名前修正:</strong> 評価対象者の名前が間違っている場合、正しい名前に修正できます</li>
           </ul>
         </div>
       </div>
+
+      {nameCorrections.length > 0 && (
+        <div className="name-correction-section">
+          <div className="section-header">
+            <h3>⚠️ 名前修正が必要な評価</h3>
+            <p className="correction-notice">
+              以下の評価は名前が間違っているため、評価対象者にメッセージが届いていません。
+              正しい名前に修正してください。
+            </p>
+          </div>
+          
+          <div className="correction-list">
+            {nameCorrections.map((evaluation) => (
+              <div key={evaluation.id} className="correction-item">
+                <div className="correction-header">
+                  <div className="correction-meta">
+                    <span className="category-badge error">
+                      {getCategoryName(evaluation.evaluation_category)}
+                    </span>
+                    <span className="week-badge">
+                      {evaluation.evaluation_week}
+                    </span>
+                  </div>
+                  <span className="status-badge error">名前要修正</span>
+                </div>
+
+                <div className="current-name">
+                  <strong>現在の名前（間違い）:</strong> {evaluation.evaluatee_name}
+                </div>
+
+                {correctingNameId === evaluation.id ? (
+                  <div className="name-correction-form">
+                    <div className="form-group">
+                      <label htmlFor={`corrected_name_${evaluation.id}`}>正しい名前:</label>
+                      <input
+                        type="text"
+                        id={`corrected_name_${evaluation.id}`}
+                        value={correctedName}
+                        onChange={(e) => setCorrectedName(e.target.value)}
+                        placeholder="正しい名前を入力してください"
+                      />
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button 
+                        onClick={() => saveNameCorrection(evaluation.id)}
+                        className="save-button"
+                      >
+                        名前を修正
+                      </button>
+                      <button 
+                        onClick={cancelNameCorrection}
+                        className="cancel-button"
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="correction-actions">
+                    <button 
+                      onClick={() => startNameCorrection(evaluation)}
+                      className="correct-name-button"
+                    >
+                      名前を修正する
+                    </button>
+                  </div>
+                )}
+                
+                <div className="evaluation-preview">
+                  <strong>評価内容:</strong>
+                  <p>{evaluation.evaluation_content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="evaluations-section">
         <div className="section-header">
@@ -171,21 +303,25 @@ function SettingsPage({ user }) {
         {givenEvaluations.length > 0 ? (
           <div className="evaluations-list">
             {givenEvaluations.map((evaluation) => (
-              <div key={evaluation.id} className="evaluation-item">
+              <div key={evaluation.id} className={`evaluation-item ${evaluation.needs_name_correction ? 'needs-correction' : ''}`}>
                 <div className="evaluation-header">
                   <div className="evaluation-meta">
-                    <span className="category-badge">
+                    <span className={`category-badge ${evaluation.needs_name_correction ? 'error' : ''}`}>
                       {getCategoryName(evaluation.evaluation_category)}
                     </span>
                     <span className="week-badge">
                       {evaluation.evaluation_week}
                     </span>
-                    <span className="evaluatee-name">
+                    <span className={`evaluatee-name ${evaluation.needs_name_correction ? 'error' : ''}`}>
                       評価対象: {evaluation.evaluatee_name}
+                      {evaluation.needs_name_correction && ' ⚠️'}
                     </span>
                   </div>
                   
                   <div className="evaluation-status">
+                    {evaluation.needs_name_correction && (
+                      <span className="status-badge error">名前要修正</span>
+                    )}
                     {evaluation.is_hidden && (
                       <span className="status-badge hidden">非公開</span>
                     )}

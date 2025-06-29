@@ -8,6 +8,12 @@ function Dashboard({ user }) {
     weeks: 0,
     categories: 0
   });
+  const [nameCorrectionStats, setNameCorrectionStats] = useState({
+    total: 0,
+    needs_correction: 0,
+    invalid_names: 0,
+    valid_names: 0
+  });
   const [recentEvaluations, setRecentEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,12 +25,15 @@ function Dashboard({ user }) {
     try {
       const token = localStorage.getItem('token');
       
-      const [evaluationsResponse, categoriesResponse, weeksResponse] = await Promise.all([
+      const [evaluationsResponse, categoriesResponse, weeksResponse, nameCorrectionResponse] = await Promise.all([
         axios.get('/api/evaluations/received', {
           headers: { Authorization: `Bearer ${token}` }
         }),
         axios.get('/api/evaluations/categories'),
         axios.get('/api/evaluations/weeks', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/api/evaluations/name-correction-stats', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -37,6 +46,7 @@ function Dashboard({ user }) {
         categories: categoriesResponse.data.categories.length
       });
 
+      setNameCorrectionStats(nameCorrectionResponse.data.stats);
       setRecentEvaluations(evaluations.slice(0, 5));
       setLoading(false);
     } catch (error) {
@@ -82,6 +92,47 @@ function Dashboard({ user }) {
           <div className="stat-label">評価項目</div>
         </div>
       </div>
+
+      {nameCorrectionStats.total > 0 && (
+        <div className="name-correction-section">
+          <h2>あなたが行った評価の名前チェック</h2>
+          <div className="name-correction-stats">
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-number">{nameCorrectionStats.total}</div>
+                <div className="stat-label">行った評価数</div>
+              </div>
+              
+              {nameCorrectionStats.needs_correction > 0 && (
+                <div className="stat-card warning">
+                  <div className="stat-number">{nameCorrectionStats.needs_correction}</div>
+                  <div className="stat-label">名前修正が必要</div>
+                </div>
+              )}
+              
+              <div className="stat-card success">
+                <div className="stat-number">{nameCorrectionStats.valid_names}</div>
+                <div className="stat-label">正しい名前</div>
+              </div>
+            </div>
+            
+            {nameCorrectionStats.needs_correction > 0 && (
+              <div className="name-correction-notice">
+                <div className="notice-content">
+                  <strong>⚠️ 注意：名前が間違っている評価があります</strong>
+                  <p>
+                    名前が間違っていると、評価を受ける人にメッセージが届きません。
+                    正しい名前に修正することで、相手に評価が届くようになります。
+                  </p>
+                  <a href="/settings" className="fix-names-button">
+                    名前を修正する
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="recent-evaluations">
         <h2>最新の他己評価</h2>

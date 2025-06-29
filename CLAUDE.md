@@ -120,7 +120,7 @@ Default admin accounts (password: `password`):
 - admin2@company.com  
 - admin3@company.com
 
-**Note**: The README.md shows password as `admin123`, but the actual implementation uses `password` based on the SETUP.md file.
+**Note**: The README.md incorrectly shows password as `admin123`, but the actual implementation uses `password` (verified by bcrypt hash in schema.sql).
 
 ## Development Notes
 
