@@ -112,29 +112,34 @@ function SettingsPage({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      const updatePromises = givenEvaluations.map(evaluation => 
-        axios.put(`/api/evaluations/${evaluation.id}/settings`, {
-          is_anonymous: isAnonymous,
-          evaluation_content: evaluation.evaluation_content,
-          is_hidden: evaluation.is_hidden
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      );
-
-      await Promise.all(updatePromises);
       
-      setGivenEvaluations(prev => 
-        prev.map(evaluation => ({
-          ...evaluation,
-          is_anonymous: isAnonymous
-        }))
-      );
+      // 新しい一括更新APIを使用
+      const response = await axios.put('/api/evaluations/bulk-anonymity', {
+        is_anonymous: isAnonymous
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      alert(`すべての評価を${isAnonymous ? '匿名' : '実名'}に変更しました`);
+      // 成功後、最新データを再取得して確実に同期
+      await fetchGivenEvaluations();
+      await fetchNameCorrections();
+      
+      alert(response.data.message);
     } catch (error) {
       console.error('一括更新エラー:', error);
-      alert('一括更新に失敗しました');
+      if (error.response?.data?.error) {
+        alert(`一括更新に失敗しました: ${error.response.data.error}`);
+      } else {
+        alert('一括更新に失敗しました。ページを再読み込みして最新状態を確認してください。');
+      }
+      
+      // エラー時もデータを再取得して状態を同期
+      try {
+        await fetchGivenEvaluations();
+        await fetchNameCorrections();
+      } catch (refetchError) {
+        console.error('データ再取得エラー:', refetchError);
+      }
     }
   };
 
@@ -314,15 +319,15 @@ function SettingsPage({ user }) {
                     </span>
                     <span className={`evaluatee-name ${evaluation.needs_name_correction ? 'error' : ''}`}>
                       評価対象: {evaluation.evaluatee_name}
-                      {evaluation.needs_name_correction && ' ⚠️'}
+                      {Boolean(evaluation.needs_name_correction) && ' ⚠️'}
                     </span>
                   </div>
                   
                   <div className="evaluation-status">
-                    {evaluation.needs_name_correction && (
+                    {Boolean(evaluation.needs_name_correction) && (
                       <span className="status-badge error">名前要修正</span>
                     )}
-                    {evaluation.is_hidden && (
+                    {Boolean(evaluation.is_hidden) && (
                       <span className="status-badge hidden">非公開</span>
                     )}
                     <span className={`status-badge ${evaluation.is_anonymous ? 'anonymous' : 'named'}`}>

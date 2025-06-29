@@ -56,6 +56,26 @@ function getDatabase() {
                 reject(err);
                 return;
             }
+            
+            // SQLiteの設定を最適化
+            db.run('PRAGMA journal_mode = WAL', (err) => {
+                if (err) {
+                    console.warn('WALモード設定警告:', err.message);
+                }
+            });
+            
+            db.run('PRAGMA synchronous = NORMAL', (err) => {
+                if (err) {
+                    console.warn('同期モード設定警告:', err.message);
+                }
+            });
+            
+            db.run('PRAGMA cache_size = 10000', (err) => {
+                if (err) {
+                    console.warn('キャッシュサイズ設定警告:', err.message);
+                }
+            });
+            
             resolve(db);
         });
     });

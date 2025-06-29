@@ -19,7 +19,13 @@ function App() {
     
     if (token && userData) {
       try {
-        setUser(JSON.parse(userData));
+        const parsedUserData = JSON.parse(userData);
+        // BOOLEAN値を確実に変換
+        const processedUserData = {
+          ...parsedUserData,
+          isAdmin: Boolean(parsedUserData.isAdmin)
+        };
+        setUser(processedUserData);
       } catch (error) {
         console.error('ユーザーデータの解析エラー:', error);
         localStorage.removeItem('token');
@@ -30,9 +36,14 @@ function App() {
   }, []);
 
   const handleLogin = (userData, token) => {
-    setUser(userData);
+    // BOOLEAN値を確実に変換
+    const processedUserData = {
+      ...userData,
+      isAdmin: Boolean(userData.isAdmin)
+    };
+    setUser(processedUserData);
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('user', JSON.stringify(processedUserData));
   };
 
   const handleLogout = () => {
@@ -94,7 +105,7 @@ function App() {
             <Route 
               path="/admin" 
               element={
-                user && user.isAdmin ? <AdminPage user={user} /> : 
+                user && Boolean(user.isAdmin) ? <AdminPage user={user} /> : 
                 user ? <Navigate to="/dashboard" /> :
                 <Navigate to="/login" />
               } 

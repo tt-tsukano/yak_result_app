@@ -417,4 +417,56 @@ router.get('/name-correction-stats', authenticateToken, async (req, res) => {
     }
 });
 
+// 一括匿名化設定
+router.put('/bulk-anonymity', authenticateToken, async (req, res) => {
+    const userEmail = req.user.email;
+    const { is_anonymous } = req.body;
+
+    if (typeof is_anonymous !== 'boolean') {
+        return res.status(400).json({ error: '無効な匿名化設定です' });
+    }
+
+    let db;
+    try {
+        db = await getDatabase();
+        
+        // Promise-basedアプローチで確実にエラーハンドリング
+        const updatePromise = new Promise((resolve, reject) => {
+            db.run(
+                `UPDATE evaluations 
+                 SET is_anonymous = ?, updated_at = CURRENT_TIMESTAMP 
+                 WHERE respondent_email = ?`,
+                [is_anonymous, userEmail],
+                function(err) {
+                    if (err) {
+                        console.error('一括更新SQLエラー:', err);
+                        reject(err);
+                    } else {
+                        resolve(this.changes);
+                    }
+                }
+            );
+        });
+
+        const changes = await updatePromise;
+        db.close();
+        
+        res.json({ 
+            message: `${changes}件の評価を${is_anonymous ? '匿名' : '実名'}に変更しました`,
+            updated: changes
+        });
+        
+    } catch (error) {
+        console.error('一括更新処理エラー:', error);
+        if (db) {
+            try {
+                db.close();
+            } catch (closeError) {
+                console.error('データベース接続クローズエラー:', closeError);
+            }
+        }
+        res.status(500).json({ error: 'データベース更新に失敗しました' });
+    }
+});
+
 module.exports = router;
