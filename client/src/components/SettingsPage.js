@@ -143,55 +143,56 @@ function SettingsPage({ user }) {
 
                 {editingId === evaluation.id ? (
                   <div className="edit-form">
-                    <div className="form-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          name="is_anonymous"
-                          checked={editForm.is_anonymous}
-                          onChange={handleFormChange}
-                        />
-                        匿名で表示する
-                      </label>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          name="is_hidden"
-                          checked={editForm.is_hidden}
-                          onChange={handleFormChange}
-                        />
-                        この評価を非公開にする
-                      </label>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>評価内容:</label>
-                      <textarea
-                        name="evaluation_content"
-                        value={editForm.evaluation_content}
+                  <div className="edit-form-options">
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        id={`is_anonymous_${evaluation.id}`}
+                        name="is_anonymous"
+                        checked={editForm.is_anonymous}
                         onChange={handleFormChange}
-                        rows={4}
                       />
+                      <label htmlFor={`is_anonymous_${evaluation.id}`}>匿名で表示する</label>
                     </div>
                     
-                    <div className="form-actions">
-                      <button 
-                        onClick={() => saveEvaluation(evaluation.id)}
-                        className="save-button"
-                      >
-                        保存
-                      </button>
-                      <button 
-                        onClick={cancelEditing}
-                        className="cancel-button"
-                      >
-                        キャンセル
-                      </button>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        id={`is_hidden_${evaluation.id}`}
+                        name="is_hidden"
+                        checked={editForm.is_hidden}
+                        onChange={handleFormChange}
+                      />
+                      <label htmlFor={`is_hidden_${evaluation.id}`}>この評価を非公開にする</label>
                     </div>
                   </div>
+                
+                  <div className="form-group">
+                    <label htmlFor={`evaluation_content_${evaluation.id}`}>評価内容:</label>
+                    <textarea
+                      id={`evaluation_content_${evaluation.id}`}
+                      name="evaluation_content"
+                      value={editForm.evaluation_content}
+                      onChange={handleFormChange}
+                      rows={4}
+                    />
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button 
+                      onClick={() => saveEvaluation(evaluation.id)}
+                      className="save-button"
+                    >
+                      保存
+                    </button>
+                    <button 
+                      onClick={cancelEditing}
+                      className="cancel-button"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
                 ) : (
                   <div className="evaluation-content">
                     <p>{evaluation.evaluation_content}</p>
