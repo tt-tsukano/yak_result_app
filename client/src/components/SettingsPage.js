@@ -112,18 +112,15 @@ function SettingsPage({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      const updatePromises = givenEvaluations.map(evaluation => 
-        axios.put(`/api/evaluations/${evaluation.id}/settings`, {
-          is_anonymous: isAnonymous,
-          evaluation_content: evaluation.evaluation_content,
-          is_hidden: evaluation.is_hidden
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      );
-
-      await Promise.all(updatePromises);
       
+      // 新しい一括更新APIを使用
+      const response = await axios.put('/api/evaluations/bulk-anonymity', {
+        is_anonymous: isAnonymous
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // フロントエンドの状態も更新
       setGivenEvaluations(prev => 
         prev.map(evaluation => ({
           ...evaluation,
@@ -131,10 +128,14 @@ function SettingsPage({ user }) {
         }))
       );
       
-      alert(`すべての評価を${isAnonymous ? '匿名' : '実名'}に変更しました`);
+      alert(response.data.message);
     } catch (error) {
       console.error('一括更新エラー:', error);
-      alert('一括更新に失敗しました');
+      if (error.response?.data?.error) {
+        alert(`一括更新に失敗しました: ${error.response.data.error}`);
+      } else {
+        alert('一括更新に失敗しました');
+      }
     }
   };
 

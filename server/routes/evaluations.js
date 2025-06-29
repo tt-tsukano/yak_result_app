@@ -417,4 +417,39 @@ router.get('/name-correction-stats', authenticateToken, async (req, res) => {
     }
 });
 
+// 一括匿名化設定
+router.put('/bulk-anonymity', authenticateToken, async (req, res) => {
+    const userEmail = req.user.email;
+    const { is_anonymous } = req.body;
+
+    if (typeof is_anonymous !== 'boolean') {
+        return res.status(400).json({ error: '無効な匿名化設定です' });
+    }
+
+    try {
+        const db = await getDatabase();
+        
+        db.run(
+            `UPDATE evaluations 
+             SET is_anonymous = ?, updated_at = CURRENT_TIMESTAMP 
+             WHERE respondent_email = ?`,
+            [is_anonymous, userEmail],
+            function(err) {
+                db.close();
+                
+                if (err) {
+                    return res.status(500).json({ error: 'データベースエラー' });
+                }
+
+                res.json({ 
+                    message: `${this.changes}件の評価を${is_anonymous ? '匿名' : '実名'}に変更しました`,
+                    updated: this.changes
+                });
+            }
+        );
+    } catch (error) {
+        res.status(500).json({ error: 'サーバーエラーが発生しました' });
+    }
+});
+
 module.exports = router;
