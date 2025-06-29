@@ -100,11 +100,11 @@ SQLiteデータベースに接続しました
 
 ### 4.1 管理者アカウントでログイン
 
-初期管理者アカウント（パスワード: `admin123`）:
+初期管理者アカウント（パスワード: `password`）:
 - **Email**: admin1@company.com
 - **Email**: admin2@company.com
 - **Email**: admin3@company.com
-- **Password**: admin123
+- **Password**: password
 
 ⚠️ **セキュリティ**: 本番環境では必ずパスワードを変更してください
 

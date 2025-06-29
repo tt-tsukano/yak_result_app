@@ -6,55 +6,133 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **Japanese corporate peer evaluation viewing application** (他己評価閲覧アプリ) designed to allow ~70 employees to view peer evaluations they've received from weekly surveys. The project aims to foster positive organizational culture through peer feedback transparency.
 
-**Current Status**: Early development phase - only requirements documentation exists. No source code has been implemented yet.
+**Current Status**: Fully implemented with React frontend, Node.js/Express backend, and SQLite database.
 
-## Key Requirements & Business Context
+## Technology Stack
 
-- **Data Source**: Microsoft Forms exported Excel files (26 weeks of survey data)
-- **Users**: ~70 employees, 3 administrators 
-- **Authentication**: Company domain email + password
-- **Core Function**: View anonymous peer evaluations across 4 categories:
-  1. Company values implementation (横軸, 感動, 技研)
-  2. Principle implementation 
-  3. Project contribution
-  4. Value practice contribution
+- **Frontend**: React 19, React Router, Axios
+- **Backend**: Node.js, Express, JWT authentication
+- **Database**: SQLite with schema in `server/database/schema.sql`
+- **File Processing**: XLSX library for Excel import
+- **Security**: bcrypt, helmet, rate limiting
 
-## Architecture Decisions Needed
+## Development Commands
 
-The technology stack has not been chosen yet. Key decisions required:
+### Setup
+```bash
+# Install all dependencies (root + client)
+npm run install:all
 
-**Frontend Options**: React/Vue.js/Angular, Next.js/Nuxt.js, or server-rendered pages
-**Backend Options**: Node.js, Python (Django/Flask/FastAPI), Java Spring Boot, or PHP Laravel
-**Database**: PostgreSQL, MySQL, or SQLite
-**Additional**: Excel processing library, authentication system
+# Or install separately
+npm install                  # Backend dependencies
+cd client && npm install    # Frontend dependencies
+```
 
-## Essential Features to Implement
+### Development
+```bash
+# Start both frontend and backend concurrently
+npm run dev
 
-1. **User Authentication**: Company domain email verification
-2. **Evaluation Viewing**: Anonymous display with sorting by evaluation categories
-3. **Evaluator Settings**: Allow evaluators to toggle anonymity, edit content, or hide evaluations
-4. **Name Standardization**: Handle Japanese name variations (渡邉/渡辺)
-5. **Admin Panel**: Excel upload, user management, participant list management
-6. **Data Import**: Process Microsoft Forms Excel with specific column structure
+# Or start separately
+npm run server:dev           # Backend only (nodemon)
+npm run client:dev          # Frontend only (React dev server)
 
-## Data Structure
+# Manual start
+node server/index.js        # Backend (port 5000)
+cd client && npm start      # Frontend (port 3000)
+```
 
-Excel columns include: ID, timestamps, email, name, evaluation week, evaluator names, and evaluation content for each of the 4 categories. See 要件定義.md:98-115 for complete column mapping.
+### Production
+```bash
+npm run build              # Build React app
+npm start                  # Production server
+```
 
-## Security Requirements
+### Testing & Linting
+```bash
+npm test                   # Run Jest tests
+npm run lint              # ESLint check
+```
 
-- Company domain email authentication only
-- Users can only view evaluations they received
-- Evaluators can only modify their own past evaluations
-- Admin access restricted to 3 designated users
+## Architecture Overview
 
-## Development Constraints
+### Backend Structure (`server/`)
+- **`index.js`**: Main Express server with security middleware (helmet, rate limiting, CORS)
+- **`database/`**: SQLite database management
+  - `init.js`: Database initialization and connection
+  - `schema.sql`: Database schema with 4 main tables
+- **`routes/`**: API endpoints
+  - `auth.js`: Login/register with JWT
+  - `evaluations.js`: Peer evaluation CRUD operations
+  - `admin.js`: Excel import and user management
+- **`middleware/auth.js`**: JWT authentication middleware
 
-- **Read-only data**: No new survey creation, only viewing completed surveys
-- **Japanese language support**: Proper encoding and name handling required
-- **Internal hosting**: Must work in company server environment
-- **No external API calls**: Offline-capable for internal network use
+### Frontend Structure (`client/src/`)
+- **`App.js`**: Main React app with routing and authentication state
+- **`components/`**: React components
+  - `LoginPage.js`/`RegisterPage.js`: Authentication forms
+  - `Dashboard.js`: Overview with statistics
+  - `EvaluationsPage.js`: Main evaluation viewing interface
+  - `SettingsPage.js`: User settings and evaluation management
+  - `AdminPage.js`: Admin panel for data import
+  - `Navbar.js`: Navigation component
 
-## File Structure
+### Database Schema
+- **`users`**: User accounts with admin flags
+- **`evaluations`**: Peer evaluations with 4 categories
+- **`participants`**: Official name list for standardization
+- **`name_mappings`**: Handle Japanese name variations (渡邉/渡辺)
 
-Currently only contains requirements document in Japanese (`要件定義.md`) with comprehensive specifications. All implementation files need to be created.
+## Key Features
+
+### Authentication
+- Company domain email restriction (set via `COMPANY_DOMAIN` env var)
+- JWT-based session management
+- Admin users have additional privileges
+
+### Evaluation Categories
+1. **Value Practice** (value_practice): 3つのバリューの実践 (横軸, 感動, 技研)
+2. **Principle Practice** (principle_practice): プリンシプルの実践
+3. **Contribution** (contribution): プロジェクトメンバー評価（貢献度）
+4. **Value Promotion** (value_promotion): プロジェクトメンバー評価（バリュー実践）
+
+### Admin Functions
+- Excel import from Microsoft Forms exports
+- Participant list management for name standardization
+- User management and system statistics
+
+## Environment Setup
+
+Create `.env` file in root directory:
+```
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+PORT=5000
+NODE_ENV=development
+COMPANY_DOMAIN=company.com
+```
+
+## Initial Data
+
+Default admin accounts (password: `password`):
+- admin1@company.com
+- admin2@company.com  
+- admin3@company.com
+
+## Development Notes
+
+- Frontend proxies API calls to backend via `"proxy": "http://localhost:5000"` in client/package.json
+- Database auto-initializes on server startup
+- Excel import expects specific column structure from Microsoft Forms
+- Japanese text encoding is handled throughout the application
+- Rate limiting: 100 requests per 15 minutes
+- File uploads limited to 10MB
+
+## Security Considerations
+
+- JWT tokens for API authentication
+- bcrypt password hashing
+- Helmet security headers
+- CORS configuration
+- Company domain email validation
+- Users can only access their own evaluation data
+- Admin-only routes protected by middleware
