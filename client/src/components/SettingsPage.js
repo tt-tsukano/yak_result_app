@@ -315,15 +315,15 @@ function SettingsPage({ user }) {
                     </span>
                     <span className={`evaluatee-name ${evaluation.needs_name_correction ? 'error' : ''}`}>
                       評価対象: {evaluation.evaluatee_name}
-                      {evaluation.needs_name_correction && ' ⚠️'}
+                      {Boolean(evaluation.needs_name_correction) && ' ⚠️'}
                     </span>
                   </div>
                   
                   <div className="evaluation-status">
-                    {evaluation.needs_name_correction && (
+                    {Boolean(evaluation.needs_name_correction) && (
                       <span className="status-badge error">名前要修正</span>
                     )}
-                    {evaluation.is_hidden && (
+                    {Boolean(evaluation.is_hidden) && (
                       <span className="status-badge hidden">非公開</span>
                     )}
                     <span className={`status-badge ${evaluation.is_anonymous ? 'anonymous' : 'named'}`}>

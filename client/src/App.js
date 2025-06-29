@@ -105,7 +105,7 @@ function App() {
             <Route 
               path="/admin" 
               element={
-                user && user.isAdmin ? <AdminPage user={user} /> : 
+                user && Boolean(user.isAdmin) ? <AdminPage user={user} /> : 
                 user ? <Navigate to="/dashboard" /> :
                 <Navigate to="/login" />
               } 
