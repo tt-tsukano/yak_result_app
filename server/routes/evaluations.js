@@ -89,7 +89,16 @@ router.get('/given', authenticateToken, async (req, res) => {
                     return res.status(500).json({ error: 'データベースエラー' });
                 }
 
-                res.json({ evaluations });
+                // SQLiteのBOOLEAN値を明示的にboolean型に変換
+                const processedEvaluations = evaluations.map(evaluation => ({
+                    ...evaluation,
+                    is_anonymous: Boolean(evaluation.is_anonymous),
+                    is_hidden: Boolean(evaluation.is_hidden),
+                    is_name_valid: evaluation.is_name_valid !== null ? Boolean(evaluation.is_name_valid) : null,
+                    needs_name_correction: Boolean(evaluation.needs_name_correction)
+                }));
+
+                res.json({ evaluations: processedEvaluations });
             }
         );
     } catch (error) {
@@ -288,7 +297,14 @@ router.get('/name-corrections', authenticateToken, async (req, res) => {
                     return res.status(500).json({ error: 'データベースエラー' });
                 }
 
-                res.json({ evaluations });
+                // SQLiteのBOOLEAN値を明示的にboolean型に変換
+                const processedEvaluations = evaluations.map(evaluation => ({
+                    ...evaluation,
+                    is_name_valid: evaluation.is_name_valid !== null ? Boolean(evaluation.is_name_valid) : null,
+                    needs_name_correction: Boolean(evaluation.needs_name_correction)
+                }));
+
+                res.json({ evaluations: processedEvaluations });
             }
         );
     } catch (error) {
