@@ -49,8 +49,8 @@ function Dashboard({ user }) {
     const categories = {
       value_practice: '3つのバリューの実践',
       principle_practice: 'プリンシプルの実践',
-      contribution: 'プロジェクト貢献度',
-      value_promotion: 'バリュー実践促進'
+      contribution: 'チームに貢献',
+      value_promotion: 'チャットでの貢献'
     };
     return categories[category] || category;
   };

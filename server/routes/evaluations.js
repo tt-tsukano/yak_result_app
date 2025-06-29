@@ -146,8 +146,8 @@ router.get('/categories', (req, res) => {
     const categories = [
         { key: 'value_practice', name: '3つのバリューの実践' },
         { key: 'principle_practice', name: 'プリンシプルの実践' },
-        { key: 'contribution', name: 'プロジェクトメンバー評価（貢献度）' },
-        { key: 'value_promotion', name: 'プロジェクトメンバー評価（バリュー実践）' }
+        { key: 'contribution', name: 'チームに貢献' },
+        { key: 'value_promotion', name: 'チャットでの貢献' }
     ];
     
     res.json({ categories });

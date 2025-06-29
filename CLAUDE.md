@@ -14,7 +14,8 @@ This is a **Japanese corporate peer evaluation viewing application** (他己評�
 - **Backend**: Node.js, Express, JWT authentication
 - **Database**: SQLite with schema in `server/database/schema.sql`
 - **File Processing**: XLSX library for Excel import
-- **Security**: bcrypt, helmet, rate limiting
+- **Security**: bcrypt, helmet, rate limiting, CORS, JWT
+- **Development**: nodemon, concurrently, Jest, ESLint
 
 ## Development Commands
 
@@ -50,7 +51,8 @@ npm start                  # Production server
 
 ### Testing & Linting
 ```bash
-npm test                   # Run Jest tests
+npm test                   # Run Jest tests (backend)
+cd client && npm test      # Run React tests (frontend)
 npm run lint              # ESLint check
 ```
 
@@ -93,8 +95,8 @@ npm run lint              # ESLint check
 ### Evaluation Categories
 1. **Value Practice** (value_practice): 3つのバリューの実践 (横軸, 感動, 技研)
 2. **Principle Practice** (principle_practice): プリンシプルの実践
-3. **Contribution** (contribution): プロジェクトメンバー評価（貢献度）
-4. **Value Promotion** (value_promotion): プロジェクトメンバー評価（バリュー実践）
+3. **Contribution** (contribution): チームに貢献
+4. **Value Promotion** (value_promotion): チャットでの貢献
 
 ### Admin Functions
 - Excel import from Microsoft Forms exports
@@ -118,14 +120,17 @@ Default admin accounts (password: `password`):
 - admin2@company.com  
 - admin3@company.com
 
+**Note**: The README.md shows password as `admin123`, but the actual implementation uses `password` based on the SETUP.md file.
+
 ## Development Notes
 
 - Frontend proxies API calls to backend via `"proxy": "http://localhost:5000"` in client/package.json
-- Database auto-initializes on server startup
-- Excel import expects specific column structure from Microsoft Forms
+- Database auto-initializes on server startup with SQLite file at `server/database/yak_result.db`
+- Excel import expects specific column structure from Microsoft Forms (detailed in SETUP.md)
 - Japanese text encoding is handled throughout the application
-- Rate limiting: 100 requests per 15 minutes
-- File uploads limited to 10MB
+- Rate limiting: 100 requests per 15 minutes per IP
+- File uploads limited to 10MB via multer
+- CSS modules are organized by component in `client/src/styles/`
 
 ## Security Considerations
 
