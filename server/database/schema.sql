@@ -1,7 +1,7 @@
 -- 他己評価閲覧アプリ データベーススキーマ
 
 -- ユーザーテーブル
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE users (
 );
 
 -- 参加者リストテーブル（氏名表記統一用）
-CREATE TABLE participants (
+CREATE TABLE IF NOT EXISTS participants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     official_name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
@@ -20,7 +20,7 @@ CREATE TABLE participants (
 );
 
 -- 氏名変換テーブル（表記ゆれ対応）
-CREATE TABLE name_mappings (
+CREATE TABLE IF NOT EXISTS name_mappings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     variant_name VARCHAR(255) NOT NULL,
     official_name VARCHAR(255) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE name_mappings (
 );
 
 -- 他己評価テーブル
-CREATE TABLE evaluations (
+CREATE TABLE IF NOT EXISTS evaluations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     respondent_email VARCHAR(255) NOT NULL,
     respondent_name VARCHAR(255) NOT NULL,
@@ -46,15 +46,15 @@ CREATE TABLE evaluations (
 );
 
 -- インデックス作成
-CREATE INDEX idx_evaluations_evaluatee ON evaluations(evaluatee_name);
-CREATE INDEX idx_evaluations_respondent ON evaluations(respondent_email);
-CREATE INDEX idx_evaluations_category ON evaluations(evaluation_category);
-CREATE INDEX idx_evaluations_week ON evaluations(evaluation_week);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_name_mappings_variant ON name_mappings(variant_name);
+CREATE INDEX IF NOT EXISTS idx_evaluations_evaluatee ON evaluations(evaluatee_name);
+CREATE INDEX IF NOT EXISTS idx_evaluations_respondent ON evaluations(respondent_email);
+CREATE INDEX IF NOT EXISTS idx_evaluations_category ON evaluations(evaluation_category);
+CREATE INDEX IF NOT EXISTS idx_evaluations_week ON evaluations(evaluation_week);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_name_mappings_variant ON name_mappings(variant_name);
 
 -- 初期管理者データ挿入（パスワードは 'admin123' のハッシュ）
-INSERT INTO users (email, password_hash, name, is_admin) VALUES 
+INSERT OR IGNORE INTO users (email, password_hash, name, is_admin) VALUES 
 ('admin1@company.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '管理者1', TRUE),
 ('admin2@company.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '管理者2', TRUE),
 ('admin3@company.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '管理者3', TRUE);
