@@ -108,7 +108,7 @@ router.post('/login', async (req, res) => {
                         id: user.id,
                         email: user.email,
                         name: user.name,
-                        isAdmin: user.is_admin
+                        isAdmin: Boolean(user.is_admin)
                     }
                 });
             }
