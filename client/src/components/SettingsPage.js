@@ -120,13 +120,9 @@ function SettingsPage({ user }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // フロントエンドの状態も更新
-      setGivenEvaluations(prev => 
-        prev.map(evaluation => ({
-          ...evaluation,
-          is_anonymous: isAnonymous
-        }))
-      );
+      // 成功後、最新データを再取得して確実に同期
+      await fetchGivenEvaluations();
+      await fetchNameCorrections();
       
       alert(response.data.message);
     } catch (error) {
@@ -134,7 +130,15 @@ function SettingsPage({ user }) {
       if (error.response?.data?.error) {
         alert(`一括更新に失敗しました: ${error.response.data.error}`);
       } else {
-        alert('一括更新に失敗しました');
+        alert('一括更新に失敗しました。ページを再読み込みして最新状態を確認してください。');
+      }
+      
+      // エラー時もデータを再取得して状態を同期
+      try {
+        await fetchGivenEvaluations();
+        await fetchNameCorrections();
+      } catch (refetchError) {
+        console.error('データ再取得エラー:', refetchError);
       }
     }
   };

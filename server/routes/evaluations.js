@@ -426,29 +426,46 @@ router.put('/bulk-anonymity', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: '無効な匿名化設定です' });
     }
 
+    let db;
     try {
-        const db = await getDatabase();
+        db = await getDatabase();
         
-        db.run(
-            `UPDATE evaluations 
-             SET is_anonymous = ?, updated_at = CURRENT_TIMESTAMP 
-             WHERE respondent_email = ?`,
-            [is_anonymous, userEmail],
-            function(err) {
-                db.close();
-                
-                if (err) {
-                    return res.status(500).json({ error: 'データベースエラー' });
+        // Promise-basedアプローチで確実にエラーハンドリング
+        const updatePromise = new Promise((resolve, reject) => {
+            db.run(
+                `UPDATE evaluations 
+                 SET is_anonymous = ?, updated_at = CURRENT_TIMESTAMP 
+                 WHERE respondent_email = ?`,
+                [is_anonymous, userEmail],
+                function(err) {
+                    if (err) {
+                        console.error('一括更新SQLエラー:', err);
+                        reject(err);
+                    } else {
+                        resolve(this.changes);
+                    }
                 }
+            );
+        });
 
-                res.json({ 
-                    message: `${this.changes}件の評価を${is_anonymous ? '匿名' : '実名'}に変更しました`,
-                    updated: this.changes
-                });
-            }
-        );
+        const changes = await updatePromise;
+        db.close();
+        
+        res.json({ 
+            message: `${changes}件の評価を${is_anonymous ? '匿名' : '実名'}に変更しました`,
+            updated: changes
+        });
+        
     } catch (error) {
-        res.status(500).json({ error: 'サーバーエラーが発生しました' });
+        console.error('一括更新処理エラー:', error);
+        if (db) {
+            try {
+                db.close();
+            } catch (closeError) {
+                console.error('データベース接続クローズエラー:', closeError);
+            }
+        }
+        res.status(500).json({ error: 'データベース更新に失敗しました' });
     }
 });
 
