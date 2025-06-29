@@ -89,6 +89,39 @@ function SettingsPage({ user }) {
     }
   };
 
+  const handleBulkAnonymityChange = async (isAnonymous) => {
+    if (!window.confirm(`すべての評価を${isAnonymous ? '匿名' : '実名'}に変更しますか？`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const updatePromises = givenEvaluations.map(evaluation => 
+        axios.put(`/api/evaluations/${evaluation.id}/settings`, {
+          is_anonymous: isAnonymous,
+          evaluation_content: evaluation.evaluation_content,
+          is_hidden: evaluation.is_hidden
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+
+      await Promise.all(updatePromises);
+      
+      setGivenEvaluations(prev => 
+        prev.map(evaluation => ({
+          ...evaluation,
+          is_anonymous: isAnonymous
+        }))
+      );
+      
+      alert(`すべての評価を${isAnonymous ? '匿名' : '実名'}に変更しました`);
+    } catch (error) {
+      console.error('一括更新エラー:', error);
+      alert('一括更新に失敗しました');
+    }
+  };
+
   if (loading) {
     return <div className="loading">読み込み中...</div>;
   }
@@ -112,7 +145,28 @@ function SettingsPage({ user }) {
       </div>
 
       <div className="evaluations-section">
-        <h3>あなたが行った評価一覧</h3>
+        <div className="section-header">
+          <h3>あなたが行った評価一覧</h3>
+          {givenEvaluations.length > 0 && (
+            <div className="bulk-actions">
+              <div className="bulk-anonymity">
+                <span>匿名化一括設定:</span>
+                <button 
+                  onClick={() => handleBulkAnonymityChange(true)}
+                  className="bulk-button anonymous"
+                >
+                  すべて匿名にする
+                </button>
+                <button 
+                  onClick={() => handleBulkAnonymityChange(false)}
+                  className="bulk-button named"
+                >
+                  すべて実名にする
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         
         {givenEvaluations.length > 0 ? (
           <div className="evaluations-list">
