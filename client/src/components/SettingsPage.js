@@ -334,7 +334,7 @@ function SettingsPage({ user }) {
                 {editingId === evaluation.id ? (
                   <div className="edit-form">
                   <div className="edit-form-options">
-                    <div className="checkbox-group">
+                    <div className="form-group">
                       <input
                         type="checkbox"
                         id={`is_anonymous_${evaluation.id}`}
@@ -345,7 +345,7 @@ function SettingsPage({ user }) {
                       <label htmlFor={`is_anonymous_${evaluation.id}`}>匿名で表示する</label>
                     </div>
                     
-                    <div className="checkbox-group">
+                    <div className="form-group">
                       <input
                         type="checkbox"
                         id={`is_hidden_${evaluation.id}`}

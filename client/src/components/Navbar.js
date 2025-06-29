@@ -38,7 +38,7 @@ function Navbar({ user, onLogout }) {
             評価設定
           </Link>
           
-          {user.isAdmin && (
+          {Boolean(user.isAdmin) && (
             <Link 
               to="/admin" 
               className={`navbar-item ${isActive('/admin')}`}
