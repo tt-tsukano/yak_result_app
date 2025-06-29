@@ -76,12 +76,12 @@ router.post('/import-excel', authenticateToken, requireAdmin, upload.single('exc
                 const evaluations = [
                     {
                         evaluateeName: row['氏名'],
-                        content: row['具体的な行動内容'],
+                        content: row['具体的な行動内容1'],
                         category: 'value_practice'
                     },
                     {
                         evaluateeName: row['氏名2'],
-                        content: row['具体的な行動内容'],
+                        content: row['具体的な行動内容2'],
                         category: 'principle_practice'
                     },
                     {
