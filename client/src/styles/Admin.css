@@ -273,3 +273,7 @@
     min-width: auto;
   }
 }
+
+.data-import .import-section:last-of-type {
+  margin-bottom: 0;
+}

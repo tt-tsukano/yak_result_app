@@ -118,3 +118,18 @@
   text-align: center;
   border: 1px solid #c6f6d5;
 }
+
+.auth-info {
+  background-color: #edf2f7;
+  border-left: 4px solid #4a5568;
+  padding: 12px 16px;
+  margin-bottom: 25px;
+  border-radius: 4px;
+}
+
+.auth-info p {
+  color: #2d3748;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}

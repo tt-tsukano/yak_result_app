@@ -10,6 +10,7 @@ function AdminPage({ user }) {
   const [participantFile, setParticipantFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [validationResult, setValidationResult] = useState(null);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -91,6 +92,31 @@ function AdminPage({ user }) {
     }
   };
 
+  const handleNameValidation = async () => {
+    if (!window.confirm('すべての未検証の評価に対して名前の検証を実行しますか？データ量によっては時間がかかる場合があります。')) {
+      return;
+    }
+  
+    setLoading(true);
+    setValidationResult(null);
+  
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('/api/evaluations/validate-names', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setValidationResult(response.data);
+    } catch (error) {
+      console.error('名前検証エラー:', error);
+      setValidationResult({
+        message: '名前の検証に失敗しました',
+        error: error.response?.data?.error || error.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderDashboard = () => (
     <div className="admin-dashboard">
       <h2>システム統計</h2>
@@ -162,6 +188,32 @@ function AdminPage({ user }) {
           <p>正式氏名が記載されたExcelファイルをアップロードしてください。</p>
         </div>
       </div>
+
+      <div className="import-section">
+      <h3>名前の検証</h3>
+      <div className="upload-area">
+        <button 
+          onClick={handleNameValidation}
+          disabled={loading}
+          className="upload-button"
+        >
+          {loading ? '検証中...' : '名前を検証'}
+        </button>
+      </div>
+        <div className="upload-info">
+          <p>すべての評価データに対して、参加者リストとの名前の照合を実行します。</p>
+        </div>
+      </div>
+
+      {validationResult && (
+        <div className={`upload-result ${validationResult.error ? 'error' : 'success'}`}>
+          <h4>{validationResult.error ? '検証エラー' : '検証結果'}</h4>
+          <p>{validationResult.message}</p>
+          {validationResult.validated !== undefined && (
+            <p>処理件数: {validationResult.validated}件</p>
+          )}
+        </div>
+      )}
 
       {uploadResult && (
         <div className={`upload-result ${uploadResult.error ? 'error' : 'success'}`}>

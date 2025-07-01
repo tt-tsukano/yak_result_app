@@ -6,8 +6,7 @@ import '../styles/Auth.css';
 function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    name: ''
+    password: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -45,24 +44,18 @@ function RegisterPage() {
       <div className="auth-card">
         <h1>他己評価閲覧アプリ</h1>
         <h2>アカウント登録</h2>
+
+        <div className="auth-info">
+          <p>
+            アンケートの回答時に使用したご自身のメールアドレス（@sgpsp.onmicrosoft.com）で登録してください。<br />
+            異なるメールアドレスで登録した場合、評価が正しく表示されません。
+          </p>
+        </div>
         
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
         
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="name">氏名</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="山田 太郎"
-            />
-          </div>
-          
           <div className="form-group">
             <label htmlFor="email">メールアドレス</label>
             <input

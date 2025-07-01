@@ -7,9 +7,11 @@ const router = express.Router();
 
 // ユーザー登録
 router.post('/register', async (req, res) => {
-    const { email, password, name } = req.body;
+    // nameをリクエストボディから削除
+    const { email, password } = req.body;
 
-    if (!email || !password || !name) {
+    // nameの必須チェックを削除
+    if (!email || !password) {
         return res.status(400).json({ error: '全ての項目を入力してください' });
     }
 
@@ -23,40 +25,57 @@ router.post('/register', async (req, res) => {
     try {
         const db = await getDatabase();
         
-        // 既存ユーザーチェック
-        db.get('SELECT id FROM users WHERE email = ?', [email], async (err, existingUser) => {
+        // 1. 評価データからメールアドレスで氏名を取得
+        db.get('SELECT respondent_name FROM evaluations WHERE respondent_email = ? LIMIT 1', [email], async (err, evaluation) => {
             if (err) {
                 db.close();
-                return res.status(500).json({ error: 'データベースエラー' });
+                return res.status(500).json({ error: 'データベースエラーが発生しました。' });
             }
 
-            if (existingUser) {
+            // 評価データにメールアドレスが存在しない場合はエラー
+            if (!evaluation) {
                 db.close();
-                return res.status(400).json({ error: 'このメールアドレスは既に登録されています' });
+                return res.status(400).json({ error: '評価回答履歴が見つかりません。アンケートで使用したメールアドレスで登録してください。' });
             }
 
-            // パスワードハッシュ化
-            const saltRounds = 10;
-            const passwordHash = await bcrypt.hash(password, saltRounds);
+            const officialName = evaluation.respondent_name; // 取得した氏名
 
-            // ユーザー挿入
-            db.run(
-                'INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)',
-                [email, passwordHash, name],
-                function(err) {
+            // 2. 既存ユーザーチェック
+            db.get('SELECT id FROM users WHERE email = ?', [email], async (err, existingUser) => {
+                if (err) {
                     db.close();
-                    
-                    if (err) {
-                        return res.status(500).json({ error: 'ユーザー登録に失敗しました' });
-                    }
-
-                    res.status(201).json({ 
-                        message: 'ユーザー登録が完了しました',
-                        userId: this.lastID 
-                    });
+                    return res.status(500).json({ error: 'データベースエラーが発生しました。' });
                 }
-            );
+
+                if (existingUser) {
+                    db.close();
+                    return res.status(400).json({ error: 'このメールアドレスは既に登録されています' });
+                }
+
+                // 3. パスワードハッシュ化
+                const saltRounds = 10;
+                const passwordHash = await bcrypt.hash(password, saltRounds);
+
+                // 4. ユーザー挿入（取得した氏名を使用）
+                db.run(
+                    'INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)',
+                    [email, passwordHash, officialName],
+                    function(err) {
+                        db.close();
+                        
+                        if (err) {
+                            return res.status(500).json({ error: 'ユーザー登録に失敗しました' });
+                        }
+
+                        res.status(201).json({ 
+                            message: 'ユーザー登録が完了しました',
+                            userId: this.lastID 
+                        });
+                    }
+                );
+            });
         });
+
     } catch (error) {
         res.status(500).json({ error: 'サーバーエラーが発生しました' });
     }
