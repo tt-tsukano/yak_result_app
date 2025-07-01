@@ -497,3 +497,26 @@
     flex-direction: column;
   }
 }
+
+.edit-form-options {
+  display: flex;
+  flex-direction: column; /* チェックボックスのグループを縦に並べます */
+  gap: 15px; /* 上下のグループの間の余白 */
+  margin-bottom: 20px;
+}
+
+.checkbox-group {
+  display: flex;
+  justify-content: space-between; /* ラベルを左端、チェックボックスを右端に配置します */
+  align-items: center;
+  max-width: 250px; /* グループの最大幅を指定して、余分な余白ができないようにします */
+}
+
+.checkbox-group label {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin: 0;
+}

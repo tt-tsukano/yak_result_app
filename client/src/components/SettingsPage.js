@@ -339,7 +339,8 @@ function SettingsPage({ user }) {
                 {editingId === evaluation.id ? (
                   <div className="edit-form">
                   <div className="edit-form-options">
-                    <div className="form-group">
+                    <div className="checkbox-group">
+                      <label htmlFor={`is_anonymous_${evaluation.id}`}>匿名で表示する</label>
                       <input
                         type="checkbox"
                         id={`is_anonymous_${evaluation.id}`}
@@ -347,10 +348,10 @@ function SettingsPage({ user }) {
                         checked={editForm.is_anonymous}
                         onChange={handleFormChange}
                       />
-                      <label htmlFor={`is_anonymous_${evaluation.id}`}>匿名で表示する</label>
                     </div>
                     
-                    <div className="form-group">
+                    <div className="checkbox-group">
+                      <label htmlFor={`is_hidden_${evaluation.id}`}>この評価を非公開にする</label>
                       <input
                         type="checkbox"
                         id={`is_hidden_${evaluation.id}`}
@@ -358,7 +359,6 @@ function SettingsPage({ user }) {
                         checked={editForm.is_hidden}
                         onChange={handleFormChange}
                       />
-                      <label htmlFor={`is_hidden_${evaluation.id}`}>この評価を非公開にする</label>
                     </div>
                   </div>
                 
