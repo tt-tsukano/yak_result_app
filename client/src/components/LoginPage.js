@@ -79,6 +79,7 @@ function LoginPage({ onLogin }) {
         
         <div className="auth-links">
           <Link to="/register">アカウントをお持ちでない方はこちら</Link>
+          <Link to="/forgot-password">パスワードを忘れましたか？</Link>
         </div>
       </div>
     </div>

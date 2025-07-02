@@ -2,21 +2,44 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/Admin.css';
 
+// ヘルパー関数をコンポーネントの外に定義
+const getCategoryName = (categoryKey) => {
+  const categories = {
+    value_practice: '3つのバリューの実践',
+    principle_practice: 'プリンシプルの実践',
+    contribution: 'チームに貢献',
+    value_promotion: 'チャットでの貢献'
+  };
+  return categories[categoryKey] || categoryKey;
+};
+
 function AdminPage({ user }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
+  const [allEvaluations, setAllEvaluations] = useState([]); // stateをここで定義
   const [uploadFile, setUploadFile] = useState(null);
   const [participantFile, setParticipantFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [validationResult, setValidationResult] = useState(null);
+  const [filters, setFilters] = useState({
+    evaluator: '',
+    evaluatee: '',
+    category: '',
+    week: ''
+  });
+  const [weeks, setWeeks] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
       fetchStats();
     } else if (activeTab === 'users') {
       fetchUsers();
+    } else if (activeTab === 'all-evaluations') {
+      fetchAllEvaluations(); // タブを開いた時にまず全件取得
+      fetchFilterOptions();   // フィルターの選択肢を取得
     }
   }, [activeTab]);
 
@@ -44,6 +67,59 @@ function AdminPage({ user }) {
     }
   };
 
+  const fetchAllEvaluations = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      // URLSearchParams を使って、空のフィルター値は送信しないようにする
+      const searchParams = new URLSearchParams();
+      for (const key in filters) {
+        if (filters[key]) {
+          searchParams.append(key, filters[key]);
+        }
+      }
+
+      const response = await axios.get(`/api/admin/evaluations?${searchParams.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllEvaluations(response.data.evaluations);
+    } catch (error) {
+      console.error('全評価データの取得エラー:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFilterOptions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const [categoriesRes, weeksRes] = await Promise.all([
+        axios.get('/api/evaluations/categories'),
+        axios.get('/api/evaluations/weeks', { headers: { Authorization: `Bearer ${token}` }})
+      ]);
+      setCategories(categoriesRes.data.categories);
+      setWeeks(weeksRes.data.weeks);
+    } catch (error) {
+      console.error('フィルター選択肢の取得エラー:', error);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    fetchAllEvaluations();
+  };
+  
+  const clearFilters = () => {
+    setFilters({ evaluator: '', evaluatee: '', category: '', week: '' });
+    // すぐに再検索をかけるために、fetchAllEvaluationsを直接呼び出す
+    fetchAllEvaluations(); 
+  };
+  
   const handleFileUpload = async (type) => {
     const file = type === 'evaluation' ? uploadFile : participantFile;
     if (!file) {
@@ -96,10 +172,10 @@ function AdminPage({ user }) {
     if (!window.confirm('すべての未検証の評価に対して名前の検証を実行しますか？データ量によっては時間がかかる場合があります。')) {
       return;
     }
-  
+
     setLoading(true);
     setValidationResult(null);
-  
+
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post('/api/evaluations/validate-names', {}, {
@@ -189,32 +265,6 @@ function AdminPage({ user }) {
         </div>
       </div>
 
-      <div className="import-section">
-      <h3>名前の検証</h3>
-      <div className="upload-area">
-        <button 
-          onClick={handleNameValidation}
-          disabled={loading}
-          className="upload-button"
-        >
-          {loading ? '検証中...' : '名前を検証'}
-        </button>
-      </div>
-        <div className="upload-info">
-          <p>すべての評価データに対して、参加者リストとの名前の照合を実行します。</p>
-        </div>
-      </div>
-
-      {validationResult && (
-        <div className={`upload-result ${validationResult.error ? 'error' : 'success'}`}>
-          <h4>{validationResult.error ? '検証エラー' : '検証結果'}</h4>
-          <p>{validationResult.message}</p>
-          {validationResult.validated !== undefined && (
-            <p>処理件数: {validationResult.validated}件</p>
-          )}
-        </div>
-      )}
-
       {uploadResult && (
         <div className={`upload-result ${uploadResult.error ? 'error' : 'success'}`}>
           <h4>{uploadResult.error ? 'エラー' : '結果'}</h4>
@@ -238,6 +288,32 @@ function AdminPage({ user }) {
                 </div>
               )}
             </div>
+          )}
+        </div>
+      )}
+
+      <div className="import-section">
+        <h3>名前の検証</h3>
+        <div className="upload-area">
+          <button 
+            onClick={handleNameValidation}
+            disabled={loading}
+            className="upload-button"
+          >
+            {loading ? '検証中...' : '名前を検証'}
+          </button>
+        </div>
+        <div className="upload-info">
+          <p>すべての評価データに対して、参加者リストとの名前の照合を実行します。</p>
+        </div>
+      </div>
+
+      {validationResult && (
+        <div className={`upload-result ${validationResult.error ? 'error' : 'success'}`}>
+          <h4>{validationResult.error ? '検証エラー' : '検証結果'}</h4>
+          <p>{validationResult.message}</p>
+          {validationResult.validated !== undefined && (
+            <p>処理件数: {validationResult.validated}件</p>
           )}
         </div>
       )}
@@ -274,6 +350,73 @@ function AdminPage({ user }) {
     </div>
   );
 
+  const renderAllEvaluations = () => (
+    <div className="all-evaluations-management">
+      <h2>全評価一覧 ({allEvaluations.length}件)</h2>
+      <form onSubmit={handleFilterSubmit} className="admin-filters-section">
+        <div className="admin-filters">
+          <input
+            type="text"
+            name="evaluator"
+            placeholder="評価者で検索"
+            value={filters.evaluator}
+            onChange={handleFilterChange}
+            className="filter-input"
+          />
+          <input
+            type="text"
+            name="evaluatee"
+            placeholder="評価対象者で検索"
+            value={filters.evaluatee}
+            onChange={handleFilterChange}
+            className="filter-input"
+          />
+          <select name="category" value={filters.category} onChange={handleFilterChange} className="filter-select">
+            <option value="">全ての評価項目</option>
+            {categories.map(cat => <option key={cat.key} value={cat.key}>{cat.name}</option>)}
+          </select>
+          <select name="week" value={filters.week} onChange={handleFilterChange} className="filter-select">
+            <option value="">全ての実施週</option>
+            {weeks.map(w => <option key={w} value={w}>{w}</option>)}
+          </select>
+        </div>
+        <div className="admin-filter-actions">
+          <button type="submit" className="filter-button primary">検索</button>
+          <button type="button" onClick={clearFilters} className="filter-button secondary">クリア</button>
+        </div>
+      </form>
+      <div className="admin-evaluations-grid">
+        {allEvaluations.map((evaluation) => (
+          <div key={evaluation.id} className="admin-evaluation-card">
+            <div className="admin-evaluation-header">
+              <span className="category-badge">{getCategoryName(evaluation.evaluation_category)}</span>
+              <span className="week-badge">{evaluation.evaluation_week}</span>
+            </div>
+
+            <div className="admin-evaluation-body">
+              <div className="evaluation-pair">
+                <span className="evaluation-label">評価者:</span>
+                <span className="evaluation-value">{evaluation.respondent_name}</span>
+              </div>
+              <div className="evaluation-pair">
+                <span className="evaluation-label">評価対象者:</span>
+                <span className="evaluation-value">{evaluation.evaluatee_name}</span>
+              </div>
+            </div>
+
+            <div className="admin-evaluation-content">
+              <p>{evaluation.evaluation_content}</p>
+            </div>
+            
+            <div className="admin-evaluation-footer">
+              <span>登録日: {new Date(evaluation.created_at).toLocaleDateString('ja-JP')}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -300,12 +443,23 @@ function AdminPage({ user }) {
         >
           ユーザー管理
         </button>
+        <button
+          className={activeTab === 'all-evaluations' ? 'active' : ''}
+          onClick={() => setActiveTab('all-evaluations')}
+        >
+          全評価一覧
+        </button>
       </div>
 
       <div className="admin-content">
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'import' && renderDataImport()}
-        {activeTab === 'users' && renderUsers()}
+        {loading ? <div className="loading">読み込み中...</div> : (
+          <>
+            {activeTab === 'dashboard' && renderDashboard()}
+            {activeTab === 'import' && renderDataImport()}
+            {activeTab === 'users' && renderUsers()}
+            {activeTab === 'all-evaluations' && renderAllEvaluations()}
+          </>
+        )}
       </div>
     </div>
   );

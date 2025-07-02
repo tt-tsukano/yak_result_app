@@ -133,3 +133,17 @@
   line-height: 1.6;
   margin: 0;
 }
+
+.auth-subtext {
+  text-align: center;
+  color: #718096;
+  margin-bottom: 25px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.auth-links {
+  display: flex;
+  flex-direction: column; /* リンクを縦に並べる */
+  gap: 10px; /* リンク間の余白 */
+}

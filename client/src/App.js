@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import Dashboard from './components/Dashboard';
 import EvaluationsPage from './components/EvaluationsPage';
 import SettingsPage from './components/SettingsPage';
@@ -20,7 +22,6 @@ function App() {
     if (token && userData) {
       try {
         const parsedUserData = JSON.parse(userData);
-        // BOOLEAN値を確実に変換
         const processedUserData = {
           ...parsedUserData,
           isAdmin: Boolean(parsedUserData.isAdmin)
@@ -36,7 +37,6 @@ function App() {
   }, []);
 
   const handleLogin = (userData, token) => {
-    // BOOLEAN値を確実に変換
     const processedUserData = {
       ...userData,
       isAdmin: Boolean(userData.isAdmin)
@@ -70,13 +70,14 @@ function App() {
             <Route 
               path="/login" 
               element={
-                user ? <Navigate to="/dashboard" /> : 
+                user ? <Navigate to={user.isAdmin ? "/admin" : "/dashboard"} /> : 
                 <LoginPage onLogin={handleLogin} />
               } 
             />
             <Route 
               path="/register" 
               element={
+                // 登録後はダッシュボード（またはログイン）に遷移するため、ここは変更なしでOK
                 user ? <Navigate to="/dashboard" /> : 
                 <RegisterPage />
               } 
@@ -113,10 +114,12 @@ function App() {
             <Route 
               path="/" 
               element={
-                user ? <Navigate to="/dashboard" /> : 
+                user ? <Navigate to={user.isAdmin ? "/admin" : "/dashboard"} /> : 
                 <Navigate to="/login" />
               } 
             />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           </Routes>
         </main>
       </div>

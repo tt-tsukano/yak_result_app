@@ -279,4 +279,57 @@ router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
     }
 });
 
+// 全ての評価を取得 (管理者専用)
+router.get('/evaluations', authenticateToken, requireAdmin, async (req, res) => {
+    const { evaluator, evaluatee, category, week } = req.query;
+
+    try {
+        const db = await getDatabase();
+        
+        let query = `
+            SELECT
+                id,
+                respondent_name,
+                evaluatee_name,
+                evaluation_week,
+                evaluation_category,
+                evaluation_content,
+                is_anonymous,
+                created_at
+            FROM evaluations
+            WHERE 1 = 1`; // 条件を追加しやすくするためのプレースホルダー
+        
+        const params = [];
+
+        if (evaluator) {
+            query += ' AND respondent_name LIKE ?';
+            params.push(`%${evaluator}%`);
+        }
+        if (evaluatee) {
+            query += ' AND evaluatee_name LIKE ?';
+            params.push(`%${evaluatee}%`);
+        }
+        if (category) {
+            query += ' AND evaluation_category = ?';
+            params.push(category);
+        }
+        if (week) {
+            query += ' AND evaluation_week = ?';
+            params.push(week);
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        db.all(query, params, (err, evaluations) => {
+            db.close();
+            if (err) {
+                return res.status(500).json({ error: 'データベースエラー: ' + err.message });
+            }
+            res.json({ evaluations });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'サーバーエラーが発生しました: ' + error.message });
+    }
+});
+
 module.exports = router;

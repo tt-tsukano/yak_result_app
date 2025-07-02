@@ -277,3 +277,132 @@
 .data-import .import-section:last-of-type {
   margin-bottom: 0;
 }
+
+.all-evaluations-management h2 {
+  color: #2d3748;
+  margin-bottom: 30px;
+}
+
+.admin-evaluations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.admin-evaluation-card {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 20px;
+  border-left: 4px solid #4a5568; /* 管理者らしい色に */
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* 各セクション間の余白 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-evaluation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.admin-evaluation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.evaluation-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.evaluation-label {
+  font-weight: 500;
+  color: #718096;
+  flex-shrink: 0;
+}
+
+.evaluation-value {
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.admin-evaluation-content p {
+  color: #2d3748;
+  line-height: 1.6;
+  margin: 0;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-evaluation-footer {
+  text-align: right;
+  font-size: 12px;
+  color: #a0aec0;
+}
+
+.admin-filters-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.filter-input, .filter-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.filter-input:focus, .filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.admin-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.filter-button.primary {
+  background: #667eea;
+  color: white;
+}
+.filter-button.primary:hover {
+  background: #5a67d8;
+}
+
+.filter-button.secondary {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+.filter-button.secondary:hover {
+  background: #cbd5e0;
+}
