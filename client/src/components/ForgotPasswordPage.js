@@ -47,7 +47,9 @@ function ForgotPasswordPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="your-email@company.com"
+              disabled={loading}
             />
+            <small className="form-help">登録時に使用した社内ドメインのメールアドレスを入力してください</small>
           </div>
 
           <button

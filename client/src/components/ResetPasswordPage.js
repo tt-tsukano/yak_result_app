@@ -9,8 +9,24 @@ function ResetPasswordPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
   const { token } = useParams(); // URLからトークンを取得
   const navigate = useNavigate();
+
+  // パスワード強度をチェックする関数
+  const checkPasswordStrength = (password) => {
+    if (password.length === 0) return '';
+    if (password.length < 6) return 'weak';
+    if (password.length >= 6 && password.length < 8) return 'medium';
+    if (password.length >= 8) return 'strong';
+    return 'medium';
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    setPasswordStrength(checkPasswordStrength(newPassword));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,10 +66,21 @@ function ResetPasswordPage() {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               required
               minLength="6"
+              disabled={loading || message}
             />
+            {passwordStrength && (
+              <div className={`password-strength ${passwordStrength}`}>
+                パスワード強度: {
+                  passwordStrength === 'weak' ? '弱い（6文字以上必要）' :
+                  passwordStrength === 'medium' ? '普通' :
+                  passwordStrength === 'strong' ? '強い' : ''
+                }
+              </div>
+            )}
+            <small className="form-help">6文字以上のパスワードを入力してください</small>
           </div>
           <div className="form-group">
             <label htmlFor="confirmPassword">新しいパスワード（確認用）</label>
@@ -64,7 +91,11 @@ function ResetPasswordPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength="6"
+              disabled={loading || message}
             />
+            {confirmPassword && password !== confirmPassword && (
+              <div className="password-mismatch">パスワードが一致しません</div>
+            )}
           </div>
 
           <button

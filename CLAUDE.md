@@ -111,10 +111,26 @@ cd client && npm test -- --testNamePattern="specific test name"
 
 Create `.env` file in root directory:
 ```
+# JWT設定
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# サーバー設定
 PORT=5000
 NODE_ENV=development
+
+# 会社ドメイン設定
 COMPANY_DOMAIN=company.com
+
+# Gmail SMTP設定（パスワードリセット機能用）
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-gmail@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_FROM=your-gmail@gmail.com
+
+# パスワードリセット設定
+RESET_PASSWORD_EXPIRY_HOURS=1
+FRONTEND_URL=http://localhost:3000
 ```
 
 ## Initial Data
@@ -135,7 +151,11 @@ Default admin accounts (password: `password`):
 - Rate limiting: 100 requests per 15 minutes per IP
 - File uploads limited to 10MB via multer
 - CSS modules are organized by component in `client/src/styles/`
-- Password reset functionality implemented with email tokens (routes exist but may need email service configuration)
+- Password reset functionality fully implemented with Gmail SMTP support
+- Password reset rate limiting: 3 attempts per 5 minutes per IP
+- Secure token generation using 32-byte random tokens
+- Configurable token expiry (default 1 hour)
+- Password strength validation and UI indicators
 
 ## Security Considerations
 
@@ -146,3 +166,35 @@ Default admin accounts (password: `password`):
 - Company domain email validation
 - Users can only access their own evaluation data
 - Admin-only routes protected by middleware
+
+## Gmail SMTP Setup for Password Reset
+
+### Step 1: Enable 2-Factor Authentication
+1. Go to your Google Account settings
+2. Navigate to Security → 2-Step Verification
+3. Enable 2-Step Verification if not already enabled
+
+### Step 2: Generate App Password
+1. Go to Security → 2-Step Verification → App passwords
+2. Select "Mail" and "Other (custom name)"
+3. Enter "Yak Result App" as the custom name
+4. Click "Generate"
+5. Copy the 16-character app password
+
+### Step 3: Configure Environment Variables
+Update your `.env` file with:
+```bash
+EMAIL_USER=your-gmail-address@gmail.com
+EMAIL_PASS=your-16-character-app-password
+EMAIL_FROM=your-gmail-address@gmail.com  # Optional, defaults to EMAIL_USER
+```
+
+### Step 4: Test Configuration
+1. Start the server with `npm run server:dev`
+2. Try the password reset feature at `/forgot-password`
+3. Check server logs for successful email sending
+
+### Troubleshooting
+- **"Invalid login"**: Verify 2FA is enabled and app password is correct
+- **"Connection refused"**: Check firewall/proxy settings
+- **"Rate limit exceeded"**: Gmail has sending limits; wait and retry
