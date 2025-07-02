@@ -54,6 +54,10 @@ npm start                  # Production server
 npm test                   # Run Jest tests (backend)
 cd client && npm test      # Run React tests (frontend)
 npm run lint              # ESLint check
+
+# Run single test file
+npm test -- --testNamePattern="specific test name"
+cd client && npm test -- --testNamePattern="specific test name"
 ```
 
 ## Architecture Overview
@@ -67,7 +71,7 @@ npm run lint              # ESLint check
   - `auth.js`: Login/register with JWT
   - `evaluations.js`: Peer evaluation CRUD operations
   - `admin.js`: Excel import and user management
-- **`middleware/auth.js`**: JWT authentication middleware
+- **`middleware/auth.js`**: JWT authentication middleware with admin protection
 
 ### Frontend Structure (`client/src/`)
 - **`App.js`**: Main React app with routing and authentication state
@@ -131,6 +135,7 @@ Default admin accounts (password: `password`):
 - Rate limiting: 100 requests per 15 minutes per IP
 - File uploads limited to 10MB via multer
 - CSS modules are organized by component in `client/src/styles/`
+- Password reset functionality implemented with email tokens (routes exist but may need email service configuration)
 
 ## Security Considerations
 
