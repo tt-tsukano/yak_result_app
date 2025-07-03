@@ -23,7 +23,7 @@ function createGmailTransporter() {
         throw new Error('Gmail SMTP設定が不完全です。EMAIL_USERとEMAIL_PASSを設定してください。');
     }
 
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT) || 587,
         secure: false, // Gmail SMTPは587ポートでSTARTTLS
