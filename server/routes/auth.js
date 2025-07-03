@@ -3,9 +3,44 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const rateLimit = require('express-rate-limit');
 const { getDatabase } = require('../database/init');
 const { validateCompanyEmail } = require('../middleware/auth');
 const router = express.Router();
+
+// パスワードリセット用のレート制限（5分間に3回まで）
+const passwordResetLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5分
+    max: 3, // 最大3リクエスト
+    message: { error: 'パスワードリセットの試行回数が多すぎます。5分後に再試行してください。' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Gmail SMTPトランスポーターを作成する関数
+function createGmailTransporter() {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Gmail SMTP設定が不完全です。EMAIL_USERとEMAIL_PASSを設定してください。');
+    }
+
+    return nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: false, // Gmail SMTPは587ポートでSTARTTLS
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS, // Gmailアプリパスワード
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+}
+
+// セキュアなトークン生成関数
+function generateSecureToken() {
+    return crypto.randomBytes(32).toString('hex'); // より長いトークン
+}
 
 // ユーザー登録
 router.post('/register', async (req, res) => {
@@ -140,72 +175,105 @@ router.post('/login', async (req, res) => {
 });
 
 // パスワードリセット申請
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ error: 'メールアドレスを入力してください。' });
+    }
+
+    if (!validateCompanyEmail(email)) {
+        const companyDomain = process.env.COMPANY_DOMAIN || 'company.com';
+        return res.status(400).json({ 
+            error: `社内ドメイン（@${companyDomain}）のメールアドレスを使用してください` 
+        });
+    }
 
     try {
         const db = await getDatabase();
-        db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-            if (err || !user) {
+        db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
+            if (err) {
                 db.close();
-                // ユーザーが存在しない場合でも、セキュリティのため成功メッセージを返す
-                return res.status(200).json({ message: 'パスワード再設定用のメールを送信しました。受信トレイをご確認ください。' });
+                return res.status(500).json({ error: 'データベースエラーが発生しました。' });
             }
 
-            // トークンを生成
-            const token = crypto.randomBytes(20).toString('hex');
-            const expires = Date.now() + 3600000; // 1時間有効
+            if (!user) {
+                db.close();
+                // セキュリティのため、ユーザーが存在しない場合でも成功メッセージを返す
+                return res.status(200).json({ 
+                    message: 'パスワード再設定用のメールを送信しました。受信トレイをご確認ください。' 
+                });
+            }
+
+            // セキュアなトークンを生成
+            const token = generateSecureToken();
+            const expiryHours = parseInt(process.env.RESET_PASSWORD_EXPIRY_HOURS) || 1;
+            const expires = Date.now() + (expiryHours * 60 * 60 * 1000); // 設定可能な有効期限
 
             db.run(
                 'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE email = ?',
                 [token, expires, email],
-                async (err) => {
+                async (updateErr) => {
                     db.close();
-                    if (err) {
+                    if (updateErr) {
+                        console.error('トークン保存エラー:', updateErr);
                         return res.status(500).json({ error: 'トークンの保存に失敗しました。' });
                     }
 
-                    const testAccount = await nodemailer.createTestAccount();
-
-                    const transporter = nodemailer.createTransport({
-                        host: 'smtp.ethereal.email',
-                        port: 587,
-                        secure: false, // true for 465, false for other ports
-                        auth: {
-                            user: testAccount.user, // Etherealのユーザー名
-                            pass: testAccount.pass, // Etherealのパスワード
-                        },
-                    });
-                    
-                    const resetURL = `http://localhost:3000/reset-password/${token}`;
-                    
-                    const mailOptions = {
-                        from: '"他己評価閲覧アプリ" <noreply@example.com>',
-                        to: user.email,
-                        subject: 'パスワード再設定のご案内',
-                        text: `パスワードを再設定するには、以下のリンクをクリックしてください。\n\n${resetURL}\n\nこのリンクの有効期限は1時間です。`,
-                        html: `<p>パスワードを再設定するには、以下のリンクをクリックしてください。</p><a href="${resetURL}">${resetURL}</a><p>このリンクの有効期限は1時間です。</p>`
-                    };
-
                     try {
+                        // Gmail SMTP設定をチェック
+                        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+                            console.error('Gmail SMTP設定が未完了です。');
+                            return res.status(500).json({ 
+                                error: 'メール送信設定が未完了です。管理者にお問い合わせください。' 
+                            });
+                        }
+
+                        const transporter = createGmailTransporter();
+                    
+                        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+                        const resetURL = `${frontendUrl}/reset-password/${token}`;
+                        const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+                        
+                        const mailOptions = {
+                            from: `"他己評価閲覧アプリ" <${fromEmail}>`,
+                            to: user.email,
+                            subject: 'パスワード再設定のご案内',
+                            text: `${user.name}様\n\nパスワードを再設定するには、以下のリンクをクリックしてください。\n\n${resetURL}\n\nこのリンクの有効期限は${expiryHours}時間です。\n\n※このメールに心当たりがない場合は、このメールを無視してください。`,
+                            html: `
+                                <h2>パスワード再設定のご案内</h2>
+                                <p>${user.name}様</p>
+                                <p>パスワードを再設定するには、以下のリンクをクリックしてください。</p>
+                                <p><a href="${resetURL}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">パスワードを再設定する</a></p>
+                                <p>または、以下のURLをブラウザにコピー＆ペーストしてください：</p>
+                                <p>${resetURL}</p>
+                                <p><strong>このリンクの有効期限は${expiryHours}時間です。</strong></p>
+                                <hr>
+                                <p><small>※このメールに心当たりがない場合は、このメールを無視してください。</small></p>
+                            `
+                        };
+
                         const info = await transporter.sendMail(mailOptions);
                         
-                        console.log('--- Ethereal メールプレビュー ---');
-                        console.log('メールが正常に送信（シミュレート）されました。');
-                        console.log('プレビューURL: ' + nodemailer.getTestMessageUrl(info));
-                        console.log('---------------------------------');
+                        console.log('パスワードリセットメール送信成功:', info.messageId);
+                        console.log('送信先:', user.email);
+
+                        res.status(200).json({ 
+                            message: 'パスワード再設定用のメールを送信しました。受信トレイをご確認ください。' 
+                        });
 
                     } catch (mailError) {
                         console.error('メール送信エラー:', mailError);
-                        return res.status(500).json({ error: 'メールの送信に失敗しました。' });
+                        return res.status(500).json({ 
+                            error: 'メールの送信に失敗しました。しばらく時間をおいて再試行するか、管理者にお問い合わせください。' 
+                        });
                     }
-                    
-                    res.status(200).json({ message: 'パスワード再設定用のメールを送信しました。受信トレイをご確認ください。' });
                 }
             );
         });
     } catch (error) {
-        res.status(500).json({ error: 'サーバーエラーが発生しました' });
+        console.error('パスワードリセット申請エラー:', error);
+        res.status(500).json({ error: 'サーバーエラーが発生しました。' });
     }
 });
 
@@ -218,6 +286,15 @@ router.post('/reset-password/:token', async (req, res) => {
         return res.status(400).json({ error: '新しいパスワードを入力してください。' });
     }
 
+    if (!token) {
+        return res.status(400).json({ error: '無効なリセットトークンです。' });
+    }
+
+    // パスワード強度チェック
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'パスワードは6文字以上である必要があります。' });
+    }
+
     try {
         const db = await getDatabase();
         // トークンが有効で、かつ有効期限内かチェック
@@ -225,9 +302,15 @@ router.post('/reset-password/:token', async (req, res) => {
             'SELECT * FROM users WHERE reset_password_token = ? AND reset_password_expires > ?',
             [token, Date.now()],
             async (err, user) => {
-                if (err || !user) {
+                if (err) {
                     db.close();
-                    return res.status(400).json({ error: '無効なトークンか、有効期限が切れています。' });
+                    console.error('データベースエラー:', err);
+                    return res.status(500).json({ error: 'データベースエラーが発生しました。' });
+                }
+
+                if (!user) {
+                    db.close();
+                    return res.status(400).json({ error: '無効なトークンか、有効期限が切れています。新しいパスワードリセットを申請してください。' });
                 }
 
                 // 新しいパスワードをハッシュ化
@@ -241,8 +324,11 @@ router.post('/reset-password/:token', async (req, res) => {
                     (updateErr) => {
                         db.close();
                         if (updateErr) {
-                            return res.status(500).json({ error: 'パスワードの更新に失敗しました。' });
+                            console.error('パスワード更新エラー:', updateErr);
+                            return res.status(500).json({ error: 'パスワードの更新に失敗しました。再度お試しください。' });
                         }
+                        
+                        console.log('パスワード正常更新:', user.email);
                         res.status(200).json({ message: 'パスワードが正常に更新されました。ログインしてください。' });
                     }
                 );
