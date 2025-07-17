@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/Dashboard.css';
 
@@ -124,9 +125,12 @@ function Dashboard({ user }) {
                     名前が間違っていると、評価を受ける人にメッセージが届きません。
                     正しい名前に修正することで、相手に評価が届くようになります。
                   </p>
-                  <a href="/settings" className="fix-names-button">
+                  <Link
+                    to={`/settings?correction_id=${nameCorrections[0]?.id || ''}`}
+                    className="fix-names-button"
+                  >
                     名前を修正する
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}
@@ -169,12 +173,12 @@ function Dashboard({ user }) {
       <div className="quick-actions">
         <h2>クイックアクション</h2>
         <div className="action-buttons">
-          <a href="/evaluations" className="action-button primary">
+          <Link to="/evaluations" className="action-button primary">
             すべての評価を見る
-          </a>
-          <a href="/settings" className="action-button secondary">
+          </Link>
+          <Link to="/settings" className="action-button secondary">
             評価設定を変更
-          </a>
+          </Link>
         </div>
       </div>
     </div>
