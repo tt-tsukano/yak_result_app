@@ -27,7 +27,7 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      await axios.post('/api/auth/register', formData);
+      await axios.post('api/auth/register', formData);
       setSuccess('アカウントが正常に作成されました。ログインページに移動します...');
       setTimeout(() => {
         navigate('/login');

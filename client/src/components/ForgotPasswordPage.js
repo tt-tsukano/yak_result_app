@@ -16,7 +16,7 @@ function ForgotPasswordPage() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/forgot-password', { email });
+      const response = await axios.post('api/auth/forgot-password', { email });
       setMessage(response.data.message);
     } catch (err) {
       setError(err.response?.data?.error || 'エラーが発生しました。');

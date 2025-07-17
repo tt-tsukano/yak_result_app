@@ -26,14 +26,14 @@ function Dashboard({ user }) {
       const token = localStorage.getItem('token');
       
       const [evaluationsResponse, categoriesResponse, weeksResponse, nameCorrectionResponse] = await Promise.all([
-        axios.get('/api/evaluations/received', {
+        axios.get('api/evaluations/received', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('/api/evaluations/categories'),
-        axios.get('/api/evaluations/weeks', {
+        axios.get('api/evaluations/categories'),
+        axios.get('api/evaluations/weeks', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('/api/evaluations/name-correction-stats', {
+        axios.get('api/evaluations/name-correction-stats', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

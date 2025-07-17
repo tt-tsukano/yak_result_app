@@ -61,7 +61,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/YAK_result_app">
       <div className="App">
         {user && <Navbar user={user} onLogout={handleLogout} />}
         

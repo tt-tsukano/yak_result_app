@@ -46,7 +46,7 @@ function EvaluationsPage({ user }) {
       if (filters.category) params.append('category', filters.category);
       if (filters.week) params.append('week', filters.week);
 
-      const response = await axios.get(`/api/evaluations/received?${params}`, {
+      const response = await axios.get('api/evaluations/received?'+params, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

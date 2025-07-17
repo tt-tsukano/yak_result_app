@@ -42,6 +42,15 @@ function generateSecureToken() {
     return crypto.randomBytes(32).toString('hex'); // より長いトークン
 }
 
+// テスト用のGETエンドポイントを追加
+router.get('/test', (req, res) => {
+    res.json({ message: 'Auth route is working!' });
+});
+
+router.get('/register', (req, res) => {
+    res.json({ error: 'GETメソッドは許可されていません。POSTメソッドを使用してください。' });
+});
+
 // ユーザー登録
 router.post('/register', async (req, res) => {
     // nameをリクエストボディから削除

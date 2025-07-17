@@ -24,7 +24,7 @@ function LoginPage({ onLogin }) {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/auth/login', formData);
+      const response = await axios.post('api/auth/login', formData);
       onLogin(response.data.user, response.data.token);
     } catch (error) {
       setError(error.response?.data?.error || 'ログインに失敗しました');

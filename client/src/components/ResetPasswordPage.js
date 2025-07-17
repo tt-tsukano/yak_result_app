@@ -39,7 +39,7 @@ function ResetPasswordPage() {
     setError('');
 
     try {
-      const response = await axios.post(`/api/auth/reset-password/${token}`, { password });
+      const response = await axios.post(`api/auth/reset-password/${token}`, { password });
       setMessage(response.data.message + ' 3秒後にログインページへ移動します。');
       setTimeout(() => {
         navigate('/login');

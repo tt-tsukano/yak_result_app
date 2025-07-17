@@ -23,7 +23,7 @@ function SettingsPage({ user }) {
   const fetchGivenEvaluations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/evaluations/given', {
+      const response = await axios.get('api/evaluations/given', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setGivenEvaluations(response.data.evaluations);
@@ -37,7 +37,7 @@ function SettingsPage({ user }) {
   const fetchNameCorrections = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/evaluations/name-corrections', {
+      const response = await axios.get('api/evaluations/name-corrections', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNameCorrections(response.data.evaluations);
@@ -85,7 +85,7 @@ function SettingsPage({ user }) {
   const saveEvaluation = async (evaluationId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/evaluations/${evaluationId}/settings`, editForm, {
+      await axios.put(`api/evaluations/${evaluationId}/settings`, editForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -114,7 +114,7 @@ function SettingsPage({ user }) {
       const token = localStorage.getItem('token');
       
       // 新しい一括更新APIを使用
-      const response = await axios.put('/api/evaluations/bulk-anonymity', {
+      const response = await axios.put('api/evaluations/bulk-anonymity', {
         is_anonymous: isAnonymous
       }, {
         headers: { Authorization: `Bearer ${token}` }

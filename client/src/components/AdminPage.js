@@ -46,7 +46,7 @@ function AdminPage({ user }) {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/admin/stats', {
+      const response = await axios.get('api/admin/stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(response.data);
@@ -58,7 +58,7 @@ function AdminPage({ user }) {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/admin/users', {
+      const response = await axios.get('api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data.users);
@@ -79,7 +79,7 @@ function AdminPage({ user }) {
         }
       }
 
-      const response = await axios.get(`/api/admin/evaluations?${searchParams.toString()}`, {
+      const response = await axios.get(`api/admin/evaluations?${searchParams.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAllEvaluations(response.data.evaluations);
@@ -94,8 +94,8 @@ function AdminPage({ user }) {
     try {
       const token = localStorage.getItem('token');
       const [categoriesRes, weeksRes] = await Promise.all([
-        axios.get('/api/evaluations/categories'),
-        axios.get('/api/evaluations/weeks', { headers: { Authorization: `Bearer ${token}` }})
+        axios.get('api/evaluations/categories'),
+        axios.get('api/evaluations/weeks', { headers: { Authorization: `Bearer ${token}` }})
       ]);
       setCategories(categoriesRes.data.categories);
       setWeeks(weeksRes.data.weeks);
@@ -136,7 +136,7 @@ function AdminPage({ user }) {
       
       if (type === 'evaluation') {
         formData.append('excelFile', file);
-        const response = await axios.post('/api/admin/import-excel', formData, {
+        const response = await axios.post('api/admin/import-excel', formData, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -146,7 +146,7 @@ function AdminPage({ user }) {
         setUploadFile(null);
       } else {
         formData.append('participantFile', file);
-        const response = await axios.post('/api/admin/import-participants', formData, {
+        const response = await axios.post('api/admin/import-participants', formData, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
@@ -178,7 +178,7 @@ function AdminPage({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/evaluations/validate-names', {}, {
+      const response = await axios.post('api/evaluations/validate-names', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setValidationResult(response.data);
