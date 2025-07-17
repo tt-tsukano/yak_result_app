@@ -7,61 +7,66 @@ function Dashboard({ user }) {
   const [stats, setStats] = useState({
     received: 0,
     weeks: 0,
-    categories: 0
+    categories: 0,
   });
   const [nameCorrectionStats, setNameCorrectionStats] = useState({
     total: 0,
     needs_correction: 0,
     invalid_names: 0,
-    valid_names: 0
+    valid_names: 0,
   });
   const [recentEvaluations, setRecentEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [nameCorrections, setNameCorrections] = useState([]);
 
   useEffect(() => {
-    fetchDashboardData();
+    const fetchAllDashboardData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+        const [
+          evaluationsResponse,
+          categoriesResponse,
+          weeksResponse,
+          nameCorrectionStatsResponse,
+          nameCorrectionsResponse,
+        ] = await Promise.all([
+          axios.get('api/evaluations/received', headers),
+          axios.get('api/evaluations/categories'),
+          axios.get('api/evaluations/weeks', headers),
+          axios.get('api/evaluations/name-correction-stats', headers),
+          axios.get('api/evaluations/name-corrections', headers),
+        ]);
+
+        const evaluations = evaluationsResponse.data.evaluations;
+
+        setStats({
+          received: evaluations.length,
+          weeks: weeksResponse.data.weeks.length,
+          categories: categoriesResponse.data.categories.length,
+        });
+
+        setNameCorrectionStats(nameCorrectionStatsResponse.data.stats);
+        setRecentEvaluations(evaluations.slice(0, 5));
+        setNameCorrections(nameCorrectionsResponse.data.evaluations);
+      } catch (error) {
+        console.error('ダッシュボードデータの取得エラー:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllDashboardData();
   }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      const [evaluationsResponse, categoriesResponse, weeksResponse, nameCorrectionResponse] = await Promise.all([
-        axios.get('api/evaluations/received', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get('api/evaluations/categories'),
-        axios.get('api/evaluations/weeks', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get('api/evaluations/name-correction-stats', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-
-      const evaluations = evaluationsResponse.data.evaluations;
-      
-      setStats({
-        received: evaluations.length,
-        weeks: weeksResponse.data.weeks.length,
-        categories: categoriesResponse.data.categories.length
-      });
-
-      setNameCorrectionStats(nameCorrectionResponse.data.stats);
-      setRecentEvaluations(evaluations.slice(0, 5));
-      setLoading(false);
-    } catch (error) {
-      console.error('ダッシュボードデータの取得エラー:', error);
-      setLoading(false);
-    }
-  };
 
   const getCategoryName = (category) => {
     const categories = {
       value_practice: '3つのバリューの実践',
       principle_practice: 'プリンシプルの実践',
       contribution: 'チームに貢献',
-      value_promotion: 'チャットでの貢献'
+      value_promotion: 'チャットでの貢献',
     };
     return categories[category] || category;
   };
@@ -82,19 +87,19 @@ function Dashboard({ user }) {
           <div className="stat-number">{stats.received}</div>
           <div className="stat-label">受け取った評価</div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-number">{stats.weeks}</div>
           <div className="stat-label">実施週数</div>
         </div>
-        
+
         <div className="stat-card">
           <div className="stat-number">{stats.categories}</div>
           <div className="stat-label">評価項目</div>
         </div>
       </div>
 
-      {nameCorrectionStats.total > 0 && (
+      {nameCorrectionStats.total > 0 && nameCorrectionStats.needs_correction > 0 && (
         <div className="name-correction-section">
           <h2>あなたが行った評価の名前チェック</h2>
           <div className="name-correction-stats">
@@ -103,39 +108,37 @@ function Dashboard({ user }) {
                 <div className="stat-number">{nameCorrectionStats.total}</div>
                 <div className="stat-label">行った評価数</div>
               </div>
-              
-              {nameCorrectionStats.needs_correction > 0 && (
-                <div className="stat-card warning">
-                  <div className="stat-number">{nameCorrectionStats.needs_correction}</div>
-                  <div className="stat-label">名前修正が必要</div>
-                </div>
-              )}
-              
+
+              <div className="stat-card warning">
+                <div className="stat-number">{nameCorrectionStats.needs_correction}</div>
+                <div className="stat-label">名前修正が必要</div>
+              </div>
+
               <div className="stat-card success">
                 <div className="stat-number">{nameCorrectionStats.valid_names}</div>
                 <div className="stat-label">正しい名前</div>
               </div>
             </div>
-            
-            {nameCorrectionStats.needs_correction > 0 && (
-              <div className="name-correction-notice">
-                <div className="notice-content">
-                  <strong>⚠️ 注意：名前が間違っている評価があります</strong>
-                  <p>
-                    名前が間違っていると、評価を受ける人にメッセージが届きません。
-                    正しい名前に修正することで、相手に評価が届くようになります。
-                  </p>
+
+            <div className="name-correction-notice">
+              <div className="notice-content">
+                <strong>⚠️ 注意：名前が間違っている評価があります</strong>
+                <p>
+                  名前が間違っていると、評価を受ける人にメッセージが届きません。
+                  正しい名前に修正することで、相手に評価が届くようになります。
+                </p>
+                {nameCorrections.length > 0 && (
                   <Link
-                    to={`/settings?correction_id=${nameCorrections[0]?.id || ''}`}
+                    to={`/settings?correction_id=${nameCorrections[0].id}`}
                     className="fix-names-button"
                   >
                     名前を修正する
                   </Link>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        </div> // ← 【修正】不足していた閉じタグを追加しました
       )}
 
       <div className="recent-evaluations">
@@ -148,17 +151,11 @@ function Dashboard({ user }) {
                   <span className="evaluation-category">
                     {getCategoryName(evaluation.evaluation_category)}
                   </span>
-                  <span className="evaluation-week">
-                    {evaluation.evaluation_week}
-                  </span>
+                  <span className="evaluation-week">{evaluation.evaluation_week}</span>
                 </div>
-                <div className="evaluation-content">
-                  {evaluation.evaluation_content}
-                </div>
+                <div className="evaluation-content">{evaluation.evaluation_content}</div>
                 <div className="evaluation-footer">
-                  <span className="evaluator-name">
-                    評価者: {evaluation.display_name}
-                  </span>
+                  <span className="evaluator-name">評価者: {evaluation.display_name}</span>
                 </div>
               </div>
             ))}
