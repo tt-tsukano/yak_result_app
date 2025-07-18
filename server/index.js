@@ -21,10 +21,9 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS設定（リバースプロキシ用に調整）
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'];
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? ['https://www.unitecloudone-demo.com', 'http://localhost:5000'] // リバースプロキシ用
-        : ['http://localhost:3000'],
+    origin: allowedOrigins,
     credentials: true
 }));
 
