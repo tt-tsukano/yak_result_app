@@ -25,8 +25,8 @@ function EvaluationsPage({ user }) {
       const token = localStorage.getItem('token');
       
       const [categoriesResponse, weeksResponse] = await Promise.all([
-        axios.get('/api/evaluations/categories'),
-        axios.get('/api/evaluations/weeks', {
+        axios.get('api/evaluations/categories'),
+        axios.get('api/evaluations/weeks', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
