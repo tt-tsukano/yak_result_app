@@ -161,7 +161,7 @@ function SettingsPage({ user }) {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/evaluations/${evaluationId}/correct-name`, {
+      await axios.put(`api/evaluations/${evaluationId}/correct-name`, {
         corrected_name: correctedName.trim()
       }, {
         headers: { Authorization: `Bearer ${token}` }
